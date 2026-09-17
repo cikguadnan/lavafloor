@@ -33,10 +33,21 @@
   <div id="start" class="overlay"><div class="card"><div class="eyebrow">Volcanic Run · Version 2</div><h1>THE FLOOR<br>IS <em>LAVA</em></h1><p>Race over unstable ruins, collect glowing crystals, hit the checkpoints, and escape through the portal.</p><button id="play" class="play">START RUN</button><p class="best" id="best">Best time: —</p></div></div>
   <div id="win" class="overlay hidden"><div class="card"><div class="eyebrow">Course cleared</div><h1>YOU<br><em>ESCAPED!</em></h1><p id="result">A flawless run.</p><button id="again" class="play">PLAY AGAIN</button></div></div>
   <div class="mobile"><div class="pad left"><button class="dir up" data-key="ArrowUp">▲</button><button class="dir down" data-key="ArrowDown">▼</button><button class="dir leftb" data-key="ArrowLeft">◀</button><button class="dir rightb" data-key="ArrowRight">▶</button></div><button class="jump" data-key="Space">JUMP</button></div>
+  <script>
+    window.addEventListener('error',function(e){
+      const card=document.querySelector('#start .card p');
+      const button=document.querySelector('#play');
+      if(card&&button&&!document.querySelector('#start').classList.contains('hidden')){
+        card.textContent='The 3D engine could not start in this browser. Please refresh once or enable hardware acceleration.';
+        button.textContent='REFRESH GAME';
+        button.onclick=()=>location.reload();
+      }
+    });
+  </script>
   <script type="module">
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js';
     const mount=document.querySelector('#game'), scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x160b2d,.018);
-    const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.1,500); const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; mount.appendChild(renderer.domElement);
+    const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.1,500);let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'default'})}catch(firstError){renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'})}renderer.setPixelRatio(Math.min(devicePixelRatio,1.5)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace; mount.appendChild(renderer.domElement);
     scene.add(new THREE.HemisphereLight(0x897cff,0xff361d,2.2)); const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(-10,25,-10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=45;sun.shadow.camera.bottom=-10;scene.add(sun);
     const lavaGeo=new THREE.PlaneGeometry(260,260,90,90), lavaMat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0}},vertexShader:`uniform float uTime;varying float vWave;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;float w=sin(p.x*.22+uTime*1.7)*.22+cos(p.y*.17-uTime*1.25)*.18+sin((p.x+p.y)*.08+uTime)*.14;p.z+=w;vWave=w;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,fragmentShader:`uniform float uTime;varying float vWave;varying vec2 vUv;void main(){float veins=sin(vUv.x*95.0+sin(vUv.y*31.0+uTime)*3.0)*sin(vUv.y*78.0-uTime*2.0);float hot=smoothstep(.35,.92,veins+vWave*1.5);vec3 base=mix(vec3(.35,.005,.0),vec3(1.0,.12,.005),vWave+.48);vec3 col=mix(base,vec3(1.0,.78,.08),hot);gl_FragColor=vec4(col,1.0);}`}); const lava=new THREE.Mesh(lavaGeo,lavaMat); lava.rotation.x=-Math.PI/2;lava.position.y=-2.2;scene.add(lava);
     const grid=new THREE.GridHelper(260,80,0xffe058,0xff3b12);grid.position.y=-2.1;grid.material.opacity=.28;grid.material.transparent=true;scene.add(grid);
